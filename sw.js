@@ -15,11 +15,20 @@ const PRECACHE_ASSETS = [
 self.addEventListener("install", event => {
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
-            return cache.addAll(PRECACHE_ASSETS);
+            return Promise.all(
+                PRECACHE_ASSETS.map(url =>
+                    fetch(url)
+                        .then(response => {
+                            if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+                            return cache.put(url, response);
+                        })
+                        .catch(err => console.error(`Cache failed for ${url}:`, err))
+                )
+            );
         })
     );
-    self.skipWaiting();
 });
+
 
 self.addEventListener("activate", event => {
     event.waitUntil(
